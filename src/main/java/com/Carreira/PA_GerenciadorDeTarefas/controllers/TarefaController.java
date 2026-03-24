@@ -9,6 +9,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+
 @RestController
 @RequestMapping(path = "/tarefas")
 public class TarefaController {
@@ -17,28 +20,50 @@ public class TarefaController {
     private TarefaService tarefaService;
 
     @GetMapping
-    public List<TarefaModel> findAll(){
-        return tarefaService.findAll();
+    public ResponseEntity<List<TarefaModel>> findAllTarefa() {
+        return ResponseEntity.ok(tarefaService.findAll());
     }
 
     @PostMapping
-    public TarefaModel criarTarefa(@RequestBody TarefaModel tarefaModel){
-        return tarefaService.criar(tarefaModel);
+    public ResponseEntity<TarefaModel> criarTarefa(@RequestBody TarefaModel tarefaModel) {
+        TarefaModel nova = tarefaService.criar(tarefaModel);
+        return ResponseEntity.status(HttpStatus.CREATED).body(nova);
     }
 
     @GetMapping("/{id}")
-    public Optional<TarefaModel> buscarTarefa(@PathVariable Long id){
-        return tarefaService.buscarPorId(id);
+    public ResponseEntity<TarefaModel> buscarTarefa(@PathVariable Long id) {
+        Optional<TarefaModel> tarefa = tarefaService.buscarPorId(id);
+
+        if (tarefa.isPresent()) {
+            return ResponseEntity.ok(tarefa.get());
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
     }
 
     @PutMapping("/{id}")
-    public TarefaModel atualizarTarefa(@PathVariable Long id, @RequestBody TarefaModel tarefaModel){
-        return tarefaService.atualizar(id, tarefaModel);
+    public ResponseEntity<TarefaModel> atualizarTarefa(@PathVariable Long id,
+                                                       @RequestBody TarefaModel tarefaModel) {
+        Optional<TarefaModel> existente = tarefaService.buscarPorId(id);
+
+        if (existente.isPresent()) {
+            TarefaModel atualizado = tarefaService.atualizar(id, tarefaModel);
+            return ResponseEntity.ok(atualizado);
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
     }
 
     @DeleteMapping("/{id}")
-    public void deletarTarefa(@PathVariable Long id){
-        tarefaService.deletar(id);
+    public ResponseEntity<Void> deletarTarefa(@PathVariable Long id) {
+        Optional<TarefaModel> existente = tarefaService.buscarPorId(id);
+
+        if (existente.isPresent()) {
+            tarefaService.deletar(id);
+            return ResponseEntity.noContent().build();
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
     }
 }
 
